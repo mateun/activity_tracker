@@ -30,5 +30,5 @@ A retro-futuristic, terminal-style web tracker for daily calorie intake and exer
 
 - `index.html` – the entire self-contained app (HTML, CSS, and JS in one file)
 
-## 📸 Preview
+
 
