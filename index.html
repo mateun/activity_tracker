@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Calorie Uplink Terminal</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #000;
+            color: #00ff99;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+        }
+
+        h1,
+        h2 {
+            color: #ffcc00;
+            text-align: center;
+            text-transform: uppercase;
+            border-bottom: 2px solid #00ff99;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+
+        .terminal-box {
+            border: 2px solid #00ff99;
+            padding: 15px;
+            margin: 20px auto;
+            width: 90%;
+            max-width: 700px;
+            background: rgba(0, 255, 153, 0.05);
+        }
+
+        button {
+            font-family: 'Courier New', monospace;
+            background-color: #000;
+            color: #00ff99;
+            border: 2px solid #ffcc00;
+            padding: 10px 20px;
+            font-size: 1em;
+            margin: 10px;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        button:hover {
+            background-color: #00ff99;
+            color: #000;
+        }
+
+        #log div {
+            border-bottom: 1px dashed #00ff99;
+            padding: 5px 0;
+        }
+
+        #totals p {
+            margin: 5px 0;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        ::selection {
+            background: #00ff99;
+            color: #000;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Calorie Uplink</h1>
+
+    <div class="center">
+        <button onclick="logEntry('food')">[ LOG FOOD ]</button>
+        <button onclick="logEntry('sport')">[ LOG SPORT ]</button>
+    </div>
+
+    <h2>Data Stream</h2>
+    <div id="log" class="terminal-box"></div>
+
+    <h2>Summary Stats</h2>
+    <div id="totals" class="terminal-box"></div>
+
+    <script>
+        const logDiv = document.getElementById("log");
+        const totalsDiv = document.getElementById("totals");
+
+        updateLog();
+        updateTotals();
+
+        function logEntry(type) {
+            const name = prompt(`Enter ${type} name:`).trim();
+            if (!name) return;
+
+            const calStr = prompt(`Enter calories:`).trim();
+            const calories = parseInt(calStr);
+            if (isNaN(calories)) {
+                alert("Invalid number.");
+                return;
+            }
+
+            const entry = {
+                type,
+                name,
+                calories,
+                timestamp: new Date()
+            };
+            persist(entry);
+            updateLog();
+            updateTotals();
+        }
+
+        function get_entries_for_day(daykey) {
+            var entries = JSON.parse(localStorage.getItem(daykey))
+            return entries == null ? [] : entries
+        }
+
+        function persist(entry) {
+            var day_key = getTodayKey()
+            var entries = get_entries_for_day(day_key)
+            if (entries == null) {
+                entries = []
+            }
+            entries.push(entry);
+            localStorage.setItem(getTodayKey(), JSON.stringify(entries))
+        }
+
+        function formatDateTime(date) {
+            const dd = String(date.getDate()).padStart(2, '0');
+            const mm = String(date.getMonth() + 1).padStart(2, '0'); // months are 0-indexed
+            const yyyy = date.getFullYear();
+
+            const hh = String(date.getHours()).padStart(2, '0');
+            const min = String(date.getMinutes()).padStart(2, '0');
+            const sec = String(date.getSeconds()).padStart(2, '0');
+
+            return `${dd}.${mm}.${yyyy} ${hh}:${min}:${sec}`;
+        }
+
+        function updateLog() {
+            logDiv.innerHTML = "";
+            var entries = get_entries_for_day(getTodayKey())
+            for (const e of entries) {
+                const div = document.createElement("div")
+                div.textContent = `[${formatDateTime(new Date(e.timestamp))}] ${e.type.toUpperCase()} :: ${e.name} (${e.calories} cal)`;
+                logDiv.appendChild(div);
+            }
+        }
+
+        function getTodayKey() {
+            const d = new Date();
+            return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
+        }
+
+
+
+        function updateTotals() {
+            let totalFood = 0;
+            let totalSport = 0;
+            var entries = get_entries_for_day(getTodayKey())
+            for (const e of entries) {
+                if (e.type === "food") totalFood += e.calories;
+                else if (e.type === "sport") totalSport += e.calories;
+            }
+            const net = totalFood - totalSport;
+            totalsDiv.innerHTML = `
+        <p>INGESTED: ${totalFood} cal</p>
+        <p>EXERCISED: ${totalSport} cal</p>
+        <p>NET UPTAKE: ${net} cal</p>
+      `;
+        }
+
+
+    </script>
+</body>
+
+</html>
